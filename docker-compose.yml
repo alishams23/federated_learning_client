@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: DockerFile
+    ports:
+      - 8000:8000
+  redis:
+    image:  docker.arvancloud.ir/redis:latest
+    ports:
+      - 6379:6379 
+  test_server:
+    build:
+      context: ./test_server
+      dockerfile: DockerFile
+    ports:
+      - 8080:8080

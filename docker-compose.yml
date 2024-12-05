@@ -14,6 +14,6 @@ services:
   test_server:
     build:
       context: ./test_server
-      dockerfile: DockerFile
+      dockerfile: dockerfile
     ports:
       - 8080:8080

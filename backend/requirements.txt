@@ -50,3 +50,6 @@ wheel==0.45.0
 whitenoise==6.5.0
 zeep==4.2.1
 zipp==3.7.0
+flwr
+pandas
+sklearn

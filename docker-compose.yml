@@ -4,11 +4,11 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: DockerFile
+      dockerfile: Dockerfile
     ports:
       - 8000:8000
   redis:
-    image:  docker.arvancloud.ir/redis:latest
+    image:  docker.arvancloud.ir/redis:5
     ports:
       - 6379:6379 
   test_server:

@@ -20,6 +20,7 @@ Django==4.0.2
 django-celery==3.1.17
 django-cors-headers==3.13.0
 django-filter==21.1
+django-unfold==0.43.0
 djangorestframework==3.13.1
 filelock==3.16.1
 flatbuffers==24.3.25

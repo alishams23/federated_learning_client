@@ -1,21 +1,86 @@
 import flwr as fl
-import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.optimizers import Adam
 import pandas as pd
-from sklearn.linear_model import LinearRegression
-import joblib
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 import os
-from typing import List, Tuple
+import joblib
 import pickle
-import logging
 
-logging.basicConfig(level=logging.INFO)  # You can set the level to DEBUG, INFO, WARNING, etc.
-logger = logging.getLogger(__name__)
 
-# Function to save the model after training
+def load_csv_data(file_path: str):
+    """
+    Load client data from a CSV file. Assumes the last column is the target label.
+    Args:
+        file_path (str): Path to the CSV file.
+    Returns:
+        Tuple: (train_data, test_data) -> Each as (X, y)
+    """
+    # Load CSV file
+    data = pd.read_csv(file_path)
+
+    # Assume the last column is the target label
+    X = data.iloc[:, :-1].values  # All columns except the last one as features
+    y = data.iloc[:, -1].values   # The last column as the label
+
+    # Preprocess labels for binary classification (if necessary)
+    y = (y > 140).astype(int)  # Example: Convert to 0/1 binary classification
+
+    # Normalize the feature data
+    scaler = StandardScaler()
+    X = scaler.fit_transform(X)
+
+    # Split data into training and testing
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    return (X_train, y_train), (X_test, y_test)
+
+
+def create_model():
+    # Create a simple model for binary classification
+    model = Sequential([
+        Dense(16, activation='relu', input_shape=(10,)),  # Adjust input_shape based on feature count
+        Dense(8, activation='relu'),
+        Dense(1, activation='sigmoid')  # Binary classification output
+    ])
+    model.compile(optimizer=Adam(learning_rate=0.001),
+                  loss='binary_crossentropy',
+                  metrics=['accuracy'])
+    return model
+
+
+class DiabetesClient(fl.client.NumPyClient):
+    def __init__(self, model, train_data, test_data):
+        self.model = model
+        self.train_data = train_data
+        self.test_data = test_data
+
+    def get_parameters(self, config):
+        return self.model.get_weights()
+
+    def fit(self, parameters, config):
+        self.model.set_weights(parameters)
+        self.model.fit(self.train_data[0], self.train_data[1], epochs=1, batch_size=16)
+        return self.model.get_weights(), len(self.train_data[0]), {}
+
+    def evaluate(self, parameters, config):
+        self.model.set_weights(parameters)
+        loss, accuracy = self.model.evaluate(self.test_data[0], self.test_data[1])
+        return loss, len(self.test_data[0]), {"accuracy": accuracy}
+
+
 def save_final_model(model, data_id: str, format: str = 'joblib') -> None:
-    """ Save the final model to a specified path """
-    logger.info(f'step 1')
-    model_directory = "../media/model/"
+    """
+    Save the final model to a specified path.
+    Args:
+        model: Trained model to be saved.
+        data_id (str): Unique identifier for the model.
+        format (str): File format to save the model ('joblib' or 'pkl').
+    """
+    model_directory = "./media/model/"
 
     # Ensure the directory exists
     os.makedirs(model_directory, exist_ok=True)
@@ -33,76 +98,45 @@ def save_final_model(model, data_id: str, format: str = 'joblib') -> None:
 
     print(f"Model saved successfully: {model_path}")
 
-class FlowerClient(fl.client.NumPyClient):
-    def __init__(self, data: pd.DataFrame, data_id: str):
-        self.data = data  # Client data
-        self.data_id = data_id  # Client data ID
-        self.model = LinearRegression()  # Model to train
 
-    def get_parameters(self, config: dict = {}) -> List[np.ndarray]:
-        logger.info(f'step 2')
+def start_client(client_data_id: str, file_path: str):
+    """
+    Start the federated learning process for a client.
+    Args:
+        client_data_id (str): ID of the client.
+        file_path (str): Path to the CSV file.
+    Returns:
+        dict: Status and message for the client training.
+    """
+    # Load the data from the provided CSV file
+    train_data, test_data = load_csv_data(file_path)
 
-        """Return model parameters as NumPy arrays."""
-        # Ensure that the model is trained before accessing coef_ and intercept_
-        if hasattr(self.model, 'coef_') and hasattr(self.model, 'intercept_'):
-            logger.info(f'step 2 o1')
-            return [self.model.coef_, np.array([self.model.intercept_])]
-        else:
-            # Return empty values if the model is not yet trained
-            logger.info(f'step 2 o3')
-            return [np.array([]), np.array([])]
+    # Initialize the model
+    model = create_model()
 
-    def set_parameters(self, parameters: List[np.ndarray]) -> None:
-        logger.info(f'step 3')
-        """Set the model parameters (coefficients and intercept)."""
-        if len(parameters[1]) > 0:
-            self.model.coef_ = parameters[0]
-            self.model.intercept_ = parameters[1][0]
-        else:
-            # Handle the case where parameters[1] is empty (e.g., do nothing)
-            # You can log a message or perform an alternative action if needed
-            logger.info("Received empty intercept parameters.")
-
-    def fit(self, parameters: List[np.ndarray], config: dict = None) -> Tuple[List[np.ndarray], int, dict[str, float]]:
-        logger.info(f'step 4')
-        """Train the model using local data."""
-        self.set_parameters(parameters)
-
-        # Prepare data (X: features, y: target)
-        X = self.data[['Area', 'Room', 'Parking', 'Warehouse', 'Elevator']].values
-        y = self.data['Price'].values
-
-        # Fit the model
-        self.model.fit(X, y)
-
-        # Calculate and return the loss (Mean Squared Error)
-        predictions = self.model.predict(X)
-        mse = np.mean((predictions - y) ** 2)
-
-        # Save the final model after training
-        save_final_model(self.model, self.data_id, format="joblib")
-
-        # Get the number of data points used for training
-        num_data_points = len(self.data)
-
-        # Return the updated parameters, number of data points, and MSE
-        return self.get_parameters(), num_data_points, {"mse": float(mse)}
-
-
-# Client-side function to start the federated learning process
-def start_client(client_data_id: str, file_path: str) -> dict:
-    """Start the federated learning process for a client."""
-    # Load the client data (assuming CSV file for now)
-    client_data = pd.read_csv(file_path)  # Adjust this to load your specific data
-
-    # Initialize the FlowerClient with the loaded data
-    client = FlowerClient(client_data, str(client_data_id))
-
-    # Start the federated learning process by using Flower's client API
+    # Initialize and start the client
+    client = DiabetesClient(model, train_data, test_data)
     fl.client.start_numpy_client(server_address="127.0.0.1:8080", client=client)
 
-    # Return a dictionary containing federated metrics (e.g., MSE)
+    # Save the final model
+    save_final_model(model, client_data_id)
+
+    # Return confirmation message
     return {
         "status": "success",
-        "message": "Federated learning complete",
+        "message": f"Federated learning complete for client {client_data_id}",
     }
+
+
+if __name__ == "__main__":
+    # Example usage: Replace 'client_data.csv' with your actual CSV file path
+    file_path = "client_data.csv"  # Path to CSV file
+    client_id = "client_1"  # Example client ID
+
+    # Start the client with provided data
+    result = start_client(client_id, file_path)
+    print(result)
+
+
+# def start_client(client_data_id: str, file_path: str):
+#     pass

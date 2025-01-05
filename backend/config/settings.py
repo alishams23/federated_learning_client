@@ -48,9 +48,16 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     "corsheaders",
+     'tailwind',
+     'theme',
     "account",
     "client_data",
-    "client_model"
+    "client_model",
+]
+TAILWIND_APP_NAME = 'theme'
+
+INTERNAL_IPS = [
+    "127.0.0.1",
 ]
 
 MIDDLEWARE = [
@@ -198,7 +205,7 @@ UNFOLD = {
     #         "href": lambda request: static("favicon.svg"),
     #     },
     # ],
-    "SHOW_HISTORY": True, # show/hide "History" button, default: True
+    "SHOW_HISTORY": False, # show/hide "History" button, default: True
     "SHOW_VIEW_ON_SITE": True, # show/hide "View on site" button, default: True
     # "ENVIRONMENT": "sample_app.environment_callback",
     # "DASHBOARD_CALLBACK": "sample_app.dashboard_callback",
@@ -268,6 +275,12 @@ UNFOLD = {
                     "link": reverse_lazy("admin:account_user_changelist"),  # URL for custom User model
                     "permission": lambda request: request.user.has_perm("account.view_user"),  # Check for permission
                 },
+                         {
+                    "title": _("سرور ها"),
+                    "icon": "computer",
+                    "link": reverse_lazy("admin:account_server_changelist"),  # URL for custom User model
+                    "permission": lambda request: request.user.has_perm("account.view_server"),  # Check for permission
+                },
                      {
                     "title": _("داده ها"),  # Title for the navigation item
                     "icon": "folder",  # Choose an appropriate icon
@@ -276,9 +289,15 @@ UNFOLD = {
                 },
                      {
                     "title": _("مدل ها"),  # Title for the navigation item
-                    "icon": "circle",  # Choose an appropriate icon
+                    "icon": "check",  # Choose an appropriate icon
                     "link": reverse_lazy("admin:client_model_federatedlearningresult_changelist"),  # URL for ClientData model
-                    "permission": lambda request: request.user.has_perm("client_data.view_clientdata"),  # Check permissions
+                    "permission": lambda request: request.user.has_perm("client_data.view_federatedlearningresult"),  # Check permissions
+                },
+                     {
+                    "title": _("ارور ها"),  # Title for the navigation item
+                    "icon": "error",  # Choose an appropriate icon
+                    "link": reverse_lazy("admin:account_error_changelist"),  # URL for ClientData model
+                    "permission": lambda request: request.user.has_perm("account.view_error"),  # Check permissions
                 },
                 ],
             },

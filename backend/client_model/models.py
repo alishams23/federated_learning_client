@@ -9,6 +9,10 @@ class FederatedLearningResult(models.Model):
     metrics = models.JSONField(verbose_name="متریک ها")  # JSON field to store metrics (e.g., accuracy, loss)
     model_path = models.FileField(upload_to='models/', null=True, blank=True,verbose_name="فایل مدل آموزش دیده شده")  # Path to the trained model
     processed_time = models.DateTimeField(auto_now_add=True,verbose_name="زمان پردازش شده")  # Timestamp for completion
+    created_at = models.DateTimeField(
+        auto_now_add=True, verbose_name="زمان ساخنه شده")
+    updated_at = models.DateTimeField(
+        auto_now=True, verbose_name="زمان بروز رسانی")
 
     class Meta:
         verbose_name = "مدل"

@@ -6,12 +6,32 @@ from django_filters import rest_framework as filterSpecial
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
+
+from client_model.tasks import start_federated_learning
 from .models import ClientData
 from .serializers import ClientDataSerializer
 from rest_framework import generics, filters
 from .paginations import ClientDataPagination
 from django_filters import rest_framework as django_filters
 from .filters import ClientDataFilter
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect
+from django.urls import reverse
+
+@login_required
+def generating_model(request, id):
+    app_name = "client_data"
+    model_name = "clientdata"
+    admin_url = reverse(f'admin:{app_name}_{model_name}_changelist')  # Admin list view URL
+    data = ClientData.objects.get(id=id)
+    data.status = "pending" 
+    data.save()
+    for item in range(0,2):
+        print(item)
+        start_federated_learning.apply_async(args=[data.id, data.uploaded_file.path])
+    return redirect(admin_url)
+
+
 class DataUploadView(APIView):
     parser_classes = (MultiPartParser, FormParser)
 

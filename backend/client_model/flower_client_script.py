@@ -99,6 +99,30 @@ def save_final_model(model, data_id: str, format: str = 'joblib') -> None:
     print(f"Model saved successfully: {model_path}")
 
 
+# def start_client(client_data_id: str, file_path: str):
+#     """
+#     Start the federated learning process for a client.
+#     Args:
+#         client_data_id (str): ID of the client.
+#         file_path (str): Path to the CSV file.
+#     Returns:
+#         dict: Status and message for the client training.
+#     """
+#     # Load the data from the provided CSV file
+#     train_data, test_data = load_csv_data(file_path)
+
+#     # Initialize the model
+#     model = create_model()
+
+#     # Initialize and start the client
+#     client = DiabetesClient(model, train_data, test_data)
+#     fl.client.start_numpy_client(server_address="127.0.0.1:8080", client=client)
+
+#     # Save the final model
+#     save_final_model(model, client_data_id)
+
+
+    # Return confirmation message
 def start_client(client_data_id: str, file_path: str):
     """
     Start the federated learning process for a client.
@@ -106,7 +130,7 @@ def start_client(client_data_id: str, file_path: str):
         client_data_id (str): ID of the client.
         file_path (str): Path to the CSV file.
     Returns:
-        dict: Status and message for the client training.
+        dict: Status, message, model location, and metrics for the client training.
     """
     # Load the data from the provided CSV file
     train_data, test_data = load_csv_data(file_path)
@@ -116,26 +140,38 @@ def start_client(client_data_id: str, file_path: str):
 
     # Initialize and start the client
     client = DiabetesClient(model, train_data, test_data)
+    
     fl.client.start_numpy_client(server_address="127.0.0.1:8080", client=client)
 
+    # Evaluate the final model
+    loss, accuracy = model.evaluate(test_data[0], test_data[1], verbose=0)
+
     # Save the final model
+    model_directory = "./media/model/"
+    os.makedirs(model_directory, exist_ok=True)
+    model_path = os.path.join(model_directory, f"{client_data_id}.joblib")
     save_final_model(model, client_data_id)
 
-    # Return confirmation message
+    # Return confirmation message, model location, and metrics
     return {
         "status": "success",
         "message": f"Federated learning complete for client {client_data_id}",
+        "model_location": model_path,
+        "metrics": {
+            "loss": loss,
+            "accuracy": accuracy
+        }
     }
 
 
-if __name__ == "__main__":
-    # Example usage: Replace 'client_data.csv' with your actual CSV file path
-    file_path = "client_data.csv"  # Path to CSV file
-    client_id = "client_1"  # Example client ID
+# if __name__ == "__main__":
+#     # Example usage: Replace 'client_data.csv' with your actual CSV file path
+#     file_path = "client_data.csv"  # Path to CSV file
+#     client_id = "client_1"  # Example client ID
 
-    # Start the client with provided data
-    result = start_client(client_id, file_path)
-    print(result)
+#     # Start the client with provided data
+#     result = start_client(client_id, file_path)
+#     print(result)
 
 
 # def start_client(client_data_id: str, file_path: str):

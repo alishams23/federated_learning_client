@@ -1,6 +1,5 @@
 import subprocess
 import json
-from client_model.flower_client_script import start_client
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import ClientData, FederatedLearningResult

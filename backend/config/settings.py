@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     "unfold.contrib.import_export",  # optional, if django-import-export package is used
     "unfold.contrib.guardian",  # optional, if django-guardian package is used
     "unfold.contrib.simple_history",  # optional, if django-simple-history package is used
+    'django.contrib.humanize',
+    
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

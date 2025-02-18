@@ -1,0 +1,90 @@
+{% extends 'unfold/layouts/base_simple.html' %}
+{% load unfold %}
+{% load cache humanize i18n %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block title %}
+    {% if subtitle %}
+        {{ subtitle }} |
+    {% endif %}
+
+    {{ title }} | {{ site_title|default:_('Django site admin') }}
+{% endblock %}
+
+{% block branding %}
+    <h1 id="site-name">
+        <a href="{% url 'admin:index' %}">
+            {{ site_header|default:_('Django administration') }}
+        </a>
+    </h1>
+{% endblock %}
+
+{% block content %}
+{% include "unfold/helpers/messages.html" %}
+    
+    {% component "unfold/components/container.html" %}        
+        <div class="flex flex-col gap-8 mb-12 " style="direction:rtl">
+            {% if user_chart  %}
+            <b class='text-xl'> 
+                برسی  مدل 
+                {{ user_chart.username }} 
+                            </b>
+            {% else %}
+            <b class='text-xl'> 
+                برسی تمامی مدل ها 
+                            </b>
+            {% endif %}
+
+            
+            {% comment %} {% include "formula/service.html" %} {% endcomment %}
+
+            <div class="flex flex-col gap-8 lg:flex-row">
+                {% for stats in kpi %}                
+                    {% component "unfold/components/card.html" with class="lg:w-1/3" label=stats.title footer=stats.footer %}
+                        {% component "unfold/components/text.html" %}
+                        <div class="mb-10"></div>
+                            {% comment %} {{ stats.title }} {% endcomment %}
+                        {% endcomponent %}   
+
+                        {% component "unfold/components/title.html" %}
+                            {{ stats.metric }}
+                        {% endcomponent %}                                  
+                    {% endcomponent %}
+                {% endfor %}
+            </div>
+            
+            {% comment %} {% component "unfold/components/card.html" %}
+                {% component "unfold/components/chart/cohort.html" with component_class="CohortComponent" %}{% endcomponent %}
+            {% endcomponent %} {% endcomment %}
+
+            {% comment %} {% component "unfold/components/card.html" with title=_("Product performance in last 28 days") %}
+                {% component "unfold/components/chart/bar.html" with data=chart height=320 %}{% endcomponent %}
+            {% endcomponent %}
+             {% endcomment %}
+            <div class="flex flex-col gap-8 lg:flex-row">            
+             
+
+                 {% for stats in performance %}
+                <div class="flex flex-col gap-8 lg:w-1/2">
+                   
+
+                   
+                        {% component "unfold/components/card.html" %}
+                            {% component "unfold/components/text.html" %}
+                                {{ stats.title }}
+                            {% endcomponent %}   
+
+                            {% component "unfold/components/title.html" with class="mb-8" %}
+                                {{ stats.metric }}
+                            {% endcomponent %}                                  
+
+                            {% component "unfold/components/chart/line.html" with data=stats.chart %}{% endcomponent %}
+                        {% endcomponent %}
+                                                  
+                </div>  
+                {% endfor %}           
+            </div>
+        </div>
+    {% endcomponent %}
+{% endblock %}

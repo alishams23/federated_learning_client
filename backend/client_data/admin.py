@@ -118,7 +118,12 @@ class MyClassBasedView(UnfoldModelAdminViewMixin, TemplateView):
 
 
 class ClientDataAdmin(ModelAdmin):
-    list_display = ('description',"id", 'is_processed',  'status','redirect_button','start_button')  # Fields to display in the admin list view
+    list_display = ('description',"id", 'is_processed',  'status','redirect_button'
+                    ,'start_button'
+                    ,'repeat_count'
+                    ,'time_repeated'
+                    ,'repeated_count'
+                    )  # Fields to display in the admin list view
     list_filter = ('status','upload_time')  # Filter data by status
     search_fields = ('description',)  # Allow searching by description
     ordering = ('-upload_time',)  # Default ordering by upload time in descending order

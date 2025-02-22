@@ -9,6 +9,9 @@ ENV PYTHONUNBUFFERED 1
 # Set the working directory in the container
 WORKDIR /app
 
+# Install git (needed for certain packages in requirements.txt)
+RUN apt-get update && apt-get install -y git
+
 # Install dependencies
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
